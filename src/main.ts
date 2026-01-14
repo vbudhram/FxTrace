@@ -255,8 +255,10 @@ function showArtifactsList(artifacts: CircleCIArtifact[]) {
     item.addEventListener('click', () => {
       const url = item.getAttribute('data-url');
       if (url) {
-        hideArtifactsList();
-        redirectToTrace(url);
+        // Open trace in new tab directly
+        const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(url)}`;
+        const playwrightUrl = `https://trace.playwright.dev/?trace=${encodeURIComponent(proxyUrl)}`;
+        window.open(playwrightUrl, '_blank');
       }
     });
   });
