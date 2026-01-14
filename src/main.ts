@@ -12,7 +12,6 @@ function showStatus(message: string, type: 'redirecting' | 'error' | 'loading') 
 
 function showLanding() {
   landingEl.classList.remove('hidden');
-  statusEl.classList.add('hidden');
 }
 
 async function redirectToTrace(traceUrl: string) {
