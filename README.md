@@ -49,10 +49,15 @@ And your trace loads in Playwright's viewer.
 ```
 
 1. You visit FxTrace with your CircleCI trace URL
-2. FxTrace redirects to trace.playwright.dev
-3. Playwright fetches the trace via FxTrace's proxy
-4. The proxy fetches from CircleCI and returns with CORS headers
-5. Your trace loads in the viewer
+2. FxTrace validates the artifact exists
+3. FxTrace redirects to trace.playwright.dev
+4. Playwright fetches the trace via FxTrace's proxy
+5. The proxy fetches from CircleCI and returns with CORS headers
+6. Your trace loads in the viewer
+
+## Error Handling
+
+FxTrace validates that the artifact exists before redirecting. If the trace file is missing or expired, you'll see a friendly error message instead of a broken trace viewer.
 
 ## Local Development
 
