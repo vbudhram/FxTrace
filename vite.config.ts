@@ -1,11 +1,76 @@
 import { defineConfig, Plugin } from 'vite'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
-// Dev proxy plugin to mimic Vercel serverless function locally
+// Dev proxy plugin to mimic Vercel serverless functions locally
 function devProxyPlugin(): Plugin {
   return {
     name: 'dev-proxy',
     configureServer(server) {
+      // Handle /api/artifacts endpoint
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url?.startsWith('/api/artifacts')) {
+          return next();
+        }
+
+        // Handle CORS preflight
+        if (req.method === 'OPTIONS') {
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+          res.statusCode = 200;
+          res.end();
+          return;
+        }
+
+        const urlParams = new URL(req.url, 'http://localhost').searchParams;
+        const project = urlParams.get('project');
+        const job = urlParams.get('job');
+
+        if (!project || !job) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Missing required parameters: project and job' }));
+          return;
+        }
+
+        const projectSlug = project.replace(/^github\//, 'gh/');
+
+        try {
+          const apiUrl = `https://circleci.com/api/v2/project/${projectSlug}/${job}/artifacts`;
+          const response = await fetch(apiUrl, {
+            headers: { 'Accept': 'application/json' },
+          });
+
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Content-Type', 'application/json');
+
+          if (!response.ok) {
+            res.statusCode = response.status;
+            res.end(JSON.stringify({ error: `CircleCI API error: ${response.status}` }));
+            return;
+          }
+
+          const data = await response.json();
+          const traceArtifacts = data.items.filter((artifact: { path: string }) =>
+            artifact.path.endsWith('.zip') &&
+            (artifact.path.includes('trace') || artifact.path.includes('playwright'))
+          );
+
+          res.end(JSON.stringify({
+            traces: traceArtifacts,
+            all: data.items,
+            job,
+            project: projectSlug,
+          }));
+        } catch (err) {
+          console.error('Artifacts API error:', err);
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      });
+
+      // Handle /api/proxy endpoint
       server.middlewares.use(async (req, res, next) => {
         if (!req.url?.startsWith('/api/proxy')) {
           return next();
