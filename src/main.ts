@@ -10,8 +10,11 @@ function showStatus(message: string, type: 'redirecting' | 'error' | 'loading') 
   statusEl.classList.remove('hidden');
 }
 
-function showLanding() {
+function showLanding(prefillUrl?: string) {
   landingEl.classList.remove('hidden');
+  if (prefillUrl) {
+    traceUrlInput.value = prefillUrl;
+  }
 }
 
 async function redirectToTrace(traceUrl: string) {
@@ -20,12 +23,13 @@ async function redirectToTrace(traceUrl: string) {
     new URL(traceUrl);
   } catch {
     showStatus(`Invalid URL: <code>${traceUrl}</code>`, 'error');
+    showLanding(traceUrl);
     return;
   }
 
-  // Hide landing, show loading status
+  // Hide landing, show loading status with spinner
   landingEl.classList.add('hidden');
-  showStatus(`Checking artifact...<br><br>URL: <code>${traceUrl}</code>`, 'loading');
+  showStatus(`<span class="spinner"></span>Checking artifact...<br><br>URL: <code>${traceUrl}</code>`, 'loading');
 
   // Construct the proxy URL
   const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(traceUrl)}`;
@@ -39,12 +43,12 @@ async function redirectToTrace(traceUrl: string) {
         ? 'Artifact not found. The trace file may have expired or the URL is incorrect.'
         : `Failed to fetch artifact: ${response.status} ${response.statusText}`;
       showStatus(`${errorMsg}<br><br>URL: <code>${traceUrl}</code>`, 'error');
-      showLanding();
+      showLanding(traceUrl);
       return;
     }
   } catch (err) {
     showStatus(`Failed to reach artifact: ${err}<br><br>URL: <code>${traceUrl}</code>`, 'error');
-    showLanding();
+    showLanding(traceUrl);
     return;
   }
 
