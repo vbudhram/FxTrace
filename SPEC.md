@@ -23,10 +23,12 @@ Build a lightweight proxy service that:
 - **Backend**: Vercel Serverless Functions (handles proxy)
 - **Deployment**: Vercel (provides HTTPS, serverless functions, CDN)
 
-## User Flow
+## User Flows
+
+### Flow 1: Direct Artifact URL
 
 ```
-1. User visits: https://your-app.vercel.app?url=<circleci-artifact-url>
+1. User visits: https://fxtrace.vercel.app?url=<circleci-artifact-url>
 2. Frontend constructs proxy URL: /api/proxy?url=<encoded-circleci-url>
 3. Frontend validates artifact exists (HEAD request to proxy)
 4. If artifact missing: Show error message, keep form visible
@@ -36,15 +38,31 @@ Build a lightweight proxy service that:
 8. User sees trace in Playwright's viewer
 ```
 
+### Flow 2: CircleCI Job URL (Browse All Traces)
+
+```
+1. User visits: https://fxtrace.vercel.app?url=<circleci-job-url>
+   Example: https://app.circleci.com/pipelines/github/mozilla/fxa/66156/workflows/xxx/jobs/633381
+2. Frontend detects job URL pattern and calls /api/artifacts endpoint
+3. /api/artifacts fetches all artifacts from CircleCI API v2
+4. Frontend filters for trace files (.zip containing "trace" or "playwright")
+5. Frontend displays interactive list of available traces with parsed metadata
+6. User clicks a trace to open it in a new tab via Playwright viewer
+7. User can click "Share" button to copy shareable FxTrace URL to clipboard
+```
+
 ## Project Structure
 
 ```
-circleci-trace-viewer/
+fxtrace/
 ├── src/
-│   └── main.ts              # Client-side redirect logic
+│   └── main.ts              # Client-side logic (URL handling, UI, share)
 ├── api/
-│   └── proxy.ts             # Vercel serverless function (CORS proxy)
-├── index.html               # Landing page
+│   ├── proxy.ts             # Vercel serverless function (CORS proxy)
+│   └── artifacts.ts         # Vercel serverless function (CircleCI API)
+├── public/
+│   └── favicon.svg          # Site favicon
+├── index.html               # Landing page with all styles
 ├── package.json
 ├── vite.config.ts           # Vite config with dev proxy + HTTPS
 ├── tsconfig.json
@@ -157,7 +175,70 @@ window.location.href = playwrightUrl;
    if (contentType) res.setHeader('Content-Type', contentType);
    ```
 
-### 4. `vite.config.ts` - Development Configuration
+### 4. `api/artifacts.ts` - CircleCI Artifacts API
+
+**Purpose**: Fetch list of artifacts from a CircleCI job and filter for trace files.
+
+**Endpoint**: `GET /api/artifacts?project=<project-slug>&job=<job-number>`
+
+**Key Implementation Details**:
+
+1. **CircleCI API v2**:
+   ```typescript
+   const apiUrl = `https://circleci.com/api/v2/project/${project}/${job}/artifacts`;
+   const response = await fetch(apiUrl);
+   ```
+
+2. **Trace File Detection**:
+   ```typescript
+   const traces = artifacts.filter((a: CircleCIArtifact) => {
+     const pathLower = a.path.toLowerCase();
+     return pathLower.endsWith('.zip') &&
+       (pathLower.includes('trace') || pathLower.includes('playwright'));
+   });
+   ```
+
+3. **Response Format**:
+   ```typescript
+   interface ArtifactsResponse {
+     traces: CircleCIArtifact[];  // Filtered trace files
+     all: CircleCIArtifact[];     // All artifacts (for debugging)
+     job: string;
+     project: string;
+   }
+   ```
+
+### 5. `src/main.ts` - Frontend Logic
+
+**Key Features**:
+
+1. **URL Type Detection**: Automatically detects whether input is a job URL or artifact URL
+   ```typescript
+   const jobUrlPattern = /app\.circleci\.com\/pipelines\/(github|gh)\/([^/]+)\/([^/]+)\/\d+\/workflows\/[^/]+\/jobs\/(\d+)/;
+   ```
+
+2. **Trace Path Parsing**: Extracts metadata from artifact paths
+   ```typescript
+   interface ParsedTraceInfo {
+     testName: string;       // Human-readable test name
+     testSuite: string;      // e.g., "settings/avatar.spec.ts"
+     testType: string;       // e.g., "functional", "integration"
+     severity: string;       // e.g., "1", "2"
+     retry: string;          // e.g., "retry1"
+   }
+   ```
+
+3. **Share Functionality**: Copies shareable FxTrace URL to clipboard
+   ```typescript
+   const shareUrl = `${window.location.origin}?url=${encodeURIComponent(jobUrl)}`;
+   await navigator.clipboard.writeText(shareUrl);
+   ```
+
+4. **Paste Detection**: Auto-submits when user pastes CircleCI URLs anywhere on page
+
+5. **Theme Support**: Light/dark mode with system preference detection
+
+### 6. `vite.config.ts` - Development Configuration
 
 **Two Critical Plugins**:
 
@@ -185,7 +266,7 @@ function devProxyPlugin(): Plugin {
 }
 ```
 
-### 5. `vercel.json` - Deployment Configuration
+### 7. `vercel.json` - Deployment Configuration
 
 ```json
 {
@@ -203,12 +284,15 @@ function devProxyPlugin(): Plugin {
 - `maxDuration: 60`: Allow 60 seconds for large trace files (default is 10s)
 - `outputDirectory: dist`: Vite builds to `dist/`
 
-### 6. `index.html` - Landing Page
+### 8. `index.html` - Landing Page
 
-Simple HTML page that:
-- Shows loading state while processing
-- Displays error messages with usage instructions
-- Shows "Redirecting..." message when successful
+Features:
+- Shows loading state with spinner while processing
+- Displays interactive artifact list for job URLs
+- Share button to copy workflow URL to clipboard
+- Error messages with usage instructions
+- Dark mode support with system preference detection
+- OpenGraph meta tags for link previews
 
 ## Key Technical Learnings
 
@@ -236,6 +320,20 @@ Simple HTML page that:
 - **Domain Allowlist**: Only proxy requests to known CircleCI domains
 - **No Open Proxy**: Prevents abuse as a general-purpose CORS proxy
 - **Public Artifacts Only**: This solution works for public CircleCI projects; private projects would need authentication token handling
+
+### 6. CircleCI API v2
+- Public artifacts can be listed without authentication via `/api/v2/project/{project-slug}/{job-number}/artifacts`
+- Project slug format: `gh/org/repo` or `github/org/repo`
+- Job URLs contain all info needed to construct API calls
+
+### 7. Clipboard API
+- Modern `navigator.clipboard.writeText()` requires HTTPS
+- Fallback to `document.execCommand('copy')` for older browsers
+- Visual feedback (button state change) improves UX
+
+### 8. Trace Path Naming Conventions
+- CircleCI Playwright traces follow pattern: `{test-type}/{suite}-severity-{N}-{hash}-{test-name}[-local][-retry{N}].zip`
+- Parsing this pattern enables rich metadata display (test name, suite, severity, retry count)
 
 ## Deployment Steps
 
@@ -273,19 +371,34 @@ npm run dev
 
 ## Testing Checklist
 
+### Core Functionality
 1. [ ] Local dev server starts on HTTPS
 2. [ ] `/api/proxy` endpoint returns 200 with CORS headers
 3. [ ] Redirect to trace.playwright.dev works
 4. [ ] Trace loads and displays correctly in Playwright viewer
 5. [ ] Non-CircleCI URLs are rejected with 403
 6. [ ] Missing URL parameter shows helpful error
-7. [ ] **Non-existent artifact shows error message** (not redirect)
-8. [ ] **Expired artifact shows friendly error message**
-9. [ ] **Error state keeps form visible** for retry
+7. [ ] Non-existent artifact shows error message (not redirect)
+8. [ ] Expired artifact shows friendly error message
+9. [ ] Error state keeps form visible for retry
+
+### Job URL Flow
+10. [ ] Job URL is detected and triggers artifact list fetch
+11. [ ] Artifact list displays with parsed metadata (test name, suite, severity)
+12. [ ] Clicking artifact opens trace in new tab
+13. [ ] Share button copies correct FxTrace URL to clipboard
+14. [ ] "Copied!" feedback appears after clicking share
+
+### Theme & UX
+15. [ ] Dark mode toggle works
+16. [ ] System theme preference is respected
+17. [ ] Paste detection auto-submits CircleCI URLs
 
 ## Potential Enhancements
 
 1. **Private Repository Support**: Add CircleCI API token input for private artifacts
-2. **Artifact Browser**: List available artifacts from a CircleCI job URL
-3. **Caching**: Cache traces temporarily to reduce repeated fetches
-4. **URL Shortener**: Generate short URLs for sharing traces
+2. **Caching**: Cache traces temporarily to reduce repeated fetches
+3. **URL Shortener**: Generate short URLs for sharing traces
+4. **Filter/Search**: Filter trace list by test name or status
+5. **Batch Download**: Download multiple traces at once
+6. **Diff View**: Compare two traces side by side
