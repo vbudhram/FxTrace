@@ -3,6 +3,72 @@ const landingEl = document.getElementById('landing')!;
 const exampleUrlEl = document.getElementById('example-url')!;
 const traceUrlInput = document.getElementById('trace-url') as HTMLInputElement;
 const viewBtn = document.getElementById('view-btn')!;
+const themeToggle = document.getElementById('theme-toggle')!;
+const themeIcon = themeToggle.querySelector('.theme-icon')!;
+const themeText = themeToggle.querySelector('.theme-text')!;
+
+// Theme management
+function getSystemTheme(): 'light' | 'dark' {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function getStoredTheme(): 'light' | 'dark' | null {
+  return localStorage.getItem('theme') as 'light' | 'dark' | null;
+}
+
+function getCurrentTheme(): 'light' | 'dark' {
+  const stored = getStoredTheme();
+  if (stored) return stored;
+  return getSystemTheme();
+}
+
+function applyTheme(theme: 'light' | 'dark') {
+  document.documentElement.setAttribute('data-theme', theme);
+  if (theme === 'dark') {
+    themeIcon.textContent = '☀️';
+    themeText.textContent = 'Light';
+  } else {
+    themeIcon.textContent = '🌙';
+    themeText.textContent = 'Dark';
+  }
+}
+
+function initTheme() {
+  const stored = getStoredTheme();
+  if (stored) {
+    applyTheme(stored);
+  } else {
+    // Use system preference, apply class for CSS matching
+    const systemTheme = getSystemTheme();
+    if (systemTheme === 'dark') {
+      document.body.classList.add('system-dark');
+    }
+    applyTheme(systemTheme);
+  }
+}
+
+function toggleTheme() {
+  const current = getCurrentTheme();
+  const newTheme = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', newTheme);
+  document.body.classList.remove('system-dark');
+  applyTheme(newTheme);
+}
+
+// Initialize theme immediately
+initTheme();
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+  if (!getStoredTheme()) {
+    const newTheme = e.matches ? 'dark' : 'light';
+    document.body.classList.toggle('system-dark', e.matches);
+    applyTheme(newTheme);
+  }
+});
+
+// Theme toggle click handler
+themeToggle.addEventListener('click', toggleTheme);
 
 function showStatus(message: string, type: 'redirecting' | 'error' | 'loading') {
   statusEl.className = `status ${type}`;
@@ -91,6 +157,17 @@ function main() {
   traceUrlInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       viewBtn.click();
+    }
+  });
+
+  // Handle paste anywhere on page - auto-submit if it's a CircleCI URL
+  document.addEventListener('paste', (e) => {
+    const pastedText = e.clipboardData?.getData('text')?.trim();
+    if (pastedText && pastedText.includes('circle-artifacts.com') && pastedText.includes('trace.zip')) {
+      e.preventDefault();
+      traceUrlInput.value = pastedText;
+      traceUrlInput.focus();
+      redirectToTrace(pastedText);
     }
   });
 }

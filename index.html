@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>FxTrace - Playwright Trace Viewer for CircleCI</title>
+
+    <!-- OpenGraph meta tags -->
+    <meta property="og:title" content="FxTrace!" />
+    <meta property="og:description" content="View Playwright traces from CircleCI artifacts. Works around CORS restrictions." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fxtrace.vercel.app" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="FxTrace!" />
+    <meta name="twitter:description" content="View Playwright traces from CircleCI artifacts." />
+    <meta name="description" content="FxTrace lets you view Playwright traces stored as CircleCI artifacts. It works around CORS restrictions that prevent trace.playwright.dev from loading CircleCI URLs directly." />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Patua+One&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
@@ -166,9 +177,100 @@
         font-size: 0.9rem;
         color: #666;
       }
+      .theme-toggle {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+      }
+      .theme-toggle:hover {
+        border-color: #20b200;
+      }
+
+      /* Dark mode styles */
+      html[data-theme="dark"] body,
+      html:not([data-theme]) body.system-dark {
+        background: #1a1a1a;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] h2,
+      html:not([data-theme]) .system-dark h2 {
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] code,
+      html:not([data-theme]) .system-dark code {
+        background: #2d2d2d;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] pre,
+      html:not([data-theme]) .system-dark pre {
+        background: #2d2d2d;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .url-form,
+      html:not([data-theme]) .system-dark .url-form {
+        background: #252525;
+        border-color: #404040;
+      }
+      html[data-theme="dark"] .url-form input,
+      html:not([data-theme]) .system-dark .url-form input {
+        background: #1a1a1a;
+        border-color: #404040;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .url-form input::placeholder,
+      html:not([data-theme]) .system-dark .url-form input::placeholder {
+        color: #888;
+      }
+      html[data-theme="dark"] .status.redirecting,
+      html:not([data-theme]) .system-dark .status.redirecting {
+        background: #1a3d1a;
+        border-color: #2d5a2d;
+        color: #a5d6a7;
+      }
+      html[data-theme="dark"] .status.error,
+      html:not([data-theme]) .system-dark .status.error {
+        background: #3d1a1a;
+        border-color: #5a2d2d;
+        color: #ef9a9a;
+      }
+      html[data-theme="dark"] .status.loading,
+      html:not([data-theme]) .system-dark .status.loading {
+        background: #3d2d1a;
+        border-color: #5a4a2d;
+        color: #ffcc80;
+      }
+      html[data-theme="dark"] .spinner,
+      html:not([data-theme]) .system-dark .spinner {
+        border-color: #ffcc80;
+        border-top-color: transparent;
+      }
+      html[data-theme="dark"] .footer,
+      html:not([data-theme]) .system-dark .footer {
+        border-color: #404040;
+        color: #888;
+      }
+      html[data-theme="dark"] .theme-toggle,
+      html:not([data-theme]) .system-dark .theme-toggle {
+        border-color: #404040;
+        color: #e0e0e0;
+      }
     </style>
   </head>
   <body>
+    <button class="theme-toggle" id="theme-toggle">
+      <span class="theme-icon">🌙</span>
+      <span class="theme-text">Dark</span>
+    </button>
     <div class="container">
       <h1>FxTrace!</h1>
       <p class="subtitle">Playwright Trace Viewer for CircleCI Artifacts</p>
