@@ -28,10 +28,12 @@ Build a lightweight proxy service that:
 ```
 1. User visits: https://your-app.vercel.app?url=<circleci-artifact-url>
 2. Frontend constructs proxy URL: /api/proxy?url=<encoded-circleci-url>
-3. Frontend redirects to: https://trace.playwright.dev/?trace=<full-proxy-url>
-4. trace.playwright.dev fetches trace via our proxy
-5. Proxy fetches from CircleCI, returns with CORS headers
-6. User sees trace in Playwright's viewer
+3. Frontend validates artifact exists (HEAD request to proxy)
+4. If artifact missing: Show error message, keep form visible
+5. If artifact exists: Redirect to https://trace.playwright.dev/?trace=<full-proxy-url>
+6. trace.playwright.dev fetches trace via our proxy
+7. Proxy fetches from CircleCI, returns with CORS headers
+8. User sees trace in Playwright's viewer
 ```
 
 ## Project Structure
@@ -81,7 +83,7 @@ circleci-trace-viewer/
 
 ### 2. `src/main.ts` - Frontend Redirect Logic
 
-**Purpose**: Read the `?url=` query parameter and redirect to trace.playwright.dev with the proxied URL.
+**Purpose**: Read the `?url=` query parameter, validate the artifact exists, and redirect to trace.playwright.dev with the proxied URL.
 
 **Key Logic**:
 ```typescript
@@ -91,6 +93,14 @@ const traceUrl = params.get('url');
 // Construct proxy URL (our serverless function)
 const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(traceUrl)}`;
 
+// Validate artifact exists before redirecting
+const response = await fetch(proxyUrl, { method: 'HEAD' });
+if (!response.ok) {
+  // Show error message, artifact not found or expired
+  showStatus('Artifact not found...', 'error');
+  return;
+}
+
 // Redirect to Playwright trace viewer
 const playwrightUrl = `https://trace.playwright.dev/?trace=${encodeURIComponent(proxyUrl)}`;
 window.location.href = playwrightUrl;
@@ -99,6 +109,9 @@ window.location.href = playwrightUrl;
 **Error Handling**:
 - Show error if no `url` parameter provided
 - Validate URL format before redirecting
+- **Validate artifact exists** with HEAD request before redirecting
+- Show friendly error message if artifact is missing or expired
+- Keep landing page visible so user can try a different URL
 - Display usage instructions on landing page
 
 ### 3. `api/proxy.ts` - Vercel Serverless Proxy
@@ -266,6 +279,9 @@ npm run dev
 4. [ ] Trace loads and displays correctly in Playwright viewer
 5. [ ] Non-CircleCI URLs are rejected with 403
 6. [ ] Missing URL parameter shows helpful error
+7. [ ] **Non-existent artifact shows error message** (not redirect)
+8. [ ] **Expired artifact shows friendly error message**
+9. [ ] **Error state keeps form visible** for retry
 
 ## Potential Enhancements
 
