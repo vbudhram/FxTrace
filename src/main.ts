@@ -203,7 +203,7 @@ function parseTracePath(path: string): ParsedTraceInfo {
   return { testName, testSuite, testType, severity, retry, fileName };
 }
 
-function showArtifactsList(artifacts: CircleCIArtifact[]) {
+function showArtifactsList(artifacts: CircleCIArtifact[], jobUrl?: string) {
   artifactsListEl.classList.remove('hidden');
 
   if (artifacts.length === 0) {
@@ -240,15 +240,49 @@ function showArtifactsList(artifacts: CircleCIArtifact[]) {
     `;
   }).join('');
 
+  const shareButtonHtml = jobUrl ? `
+    <button class="share-job-btn" id="share-job-btn" title="Copy shareable link">
+      <span class="share-icon">🔗</span>
+      <span class="share-text">Share</span>
+    </button>
+  ` : '';
+
   artifactsListEl.innerHTML = `
     <div class="artifacts-header">
-      <h3>Trace Files Found</h3>
-      <span class="artifacts-count">${artifacts.length} trace${artifacts.length !== 1 ? 's' : ''}</span>
+      <div class="artifacts-header-left">
+        <h3>Trace Files Found</h3>
+        <span class="artifacts-count">${artifacts.length} trace${artifacts.length !== 1 ? 's' : ''}</span>
+      </div>
+      ${shareButtonHtml}
     </div>
     <div class="artifacts-items">
       ${listHtml}
     </div>
   `;
+
+  // Add share button handler
+  if (jobUrl) {
+    const shareBtn = document.getElementById('share-job-btn');
+    shareBtn?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const shareUrl = `${window.location.origin}?url=${encodeURIComponent(jobUrl)}`;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        shareBtn.classList.add('copied');
+        setTimeout(() => shareBtn.classList.remove('copied'), 2000);
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        shareBtn.classList.add('copied');
+        setTimeout(() => shareBtn.classList.remove('copied'), 2000);
+      }
+    });
+  }
 
   // Add click handlers
   artifactsListEl.querySelectorAll('.artifact-item').forEach((item) => {
@@ -264,7 +298,7 @@ function showArtifactsList(artifacts: CircleCIArtifact[]) {
   });
 }
 
-async function fetchJobArtifacts(jobInfo: ParsedJobUrl) {
+async function fetchJobArtifacts(jobInfo: ParsedJobUrl, originalUrl: string) {
   landingEl.classList.add('hidden');
   hideArtifactsList();
   showStatus(
@@ -298,7 +332,7 @@ async function fetchJobArtifacts(jobInfo: ParsedJobUrl) {
     // Show success status and artifact list
     statusEl.classList.add('hidden');
     showLanding();
-    showArtifactsList(data.traces);
+    showArtifactsList(data.traces, originalUrl);
 
   } catch (err) {
     showStatus(`Failed to fetch artifacts: ${err}`, 'error');
@@ -310,7 +344,7 @@ function handleUrl(url: string) {
   // Check if it's a CircleCI job URL
   const jobInfo = parseCircleCIJobUrl(url);
   if (jobInfo) {
-    fetchJobArtifacts(jobInfo);
+    fetchJobArtifacts(jobInfo, url);
     return;
   }
 

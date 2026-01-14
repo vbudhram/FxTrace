@@ -206,10 +206,50 @@
         align-items: center;
         margin-bottom: 1rem;
       }
+      .artifacts-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
       .artifacts-header h3 {
         font-size: 1.1rem;
         font-weight: 600;
         margin: 0;
+      }
+      .share-job-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-family: inherit;
+        transition: all 0.2s;
+      }
+      .share-job-btn:hover {
+        border-color: #20b200;
+        background: #f0fff0;
+      }
+      .share-job-btn .share-icon {
+        font-size: 1rem;
+      }
+      .share-job-btn.copied {
+        background: #e8f5e9;
+        border-color: #20b200;
+        color: #2e7d32;
+      }
+      .share-job-btn.copied .share-text::after {
+        content: 'd!';
+      }
+      .share-job-btn.copied .share-text {
+        font-size: 0;
+      }
+      .share-job-btn.copied .share-text::after {
+        font-size: 0.9rem;
+        content: 'Copied!';
       }
       .artifacts-count {
         font-size: 0.85rem;
@@ -359,6 +399,23 @@
       html:not([data-theme]) .system-dark .theme-toggle {
         border-color: #404040;
         color: #e0e0e0;
+      }
+      html[data-theme="dark"] .share-job-btn,
+      html:not([data-theme]) .system-dark .share-job-btn {
+        background: #333;
+        border-color: #404040;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .share-job-btn:hover,
+      html:not([data-theme]) .system-dark .share-job-btn:hover {
+        border-color: #20b200;
+        background: #1a3d1a;
+      }
+      html[data-theme="dark"] .share-job-btn.copied,
+      html:not([data-theme]) .system-dark .share-job-btn.copied {
+        background: #1a3d1a;
+        border-color: #20b200;
+        color: #a5d6a7;
       }
       html[data-theme="dark"] .artifacts-count,
       html:not([data-theme]) .system-dark .artifacts-count {
