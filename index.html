@@ -332,6 +332,216 @@
         color: #666;
       }
 
+      /* Recent URLs styles */
+      .recent-urls {
+        margin-top: 1.5rem;
+      }
+      .recent-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+      .recent-header h3 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #666;
+        margin: 0;
+      }
+      .clear-history-btn {
+        background: none;
+        border: none;
+        color: #999;
+        font-size: 0.8rem;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+      .clear-history-btn:hover {
+        color: #c62828;
+        background: #ffebee;
+      }
+      .recent-items {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .recent-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #f5f5f5;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
+        width: 100%;
+        font-family: inherit;
+        font-size: 0.9rem;
+      }
+      .recent-item:hover {
+        border-color: #20b200;
+        background: #f0fff0;
+      }
+      .recent-item-icon {
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+      .recent-item-info {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .recent-item-title {
+        font-weight: 500;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .recent-item-meta {
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 2px;
+      }
+      .recent-item-remove {
+        background: none;
+        border: none;
+        color: #bbb;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        font-size: 1rem;
+        line-height: 1;
+        transition: all 0.2s;
+      }
+      .recent-item-remove:hover {
+        color: #c62828;
+        background: #ffebee;
+      }
+
+      /* Search filter styles */
+      .search-filter {
+        margin-bottom: 1rem;
+      }
+      .search-filter input {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 0.9rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        font-family: inherit;
+      }
+      .search-filter input:focus {
+        outline: none;
+        border-color: #20b200;
+        box-shadow: 0 0 0 2px rgba(32, 178, 0, 0.1);
+      }
+      .search-filter input::placeholder {
+        color: #999;
+      }
+
+      /* Private repo settings */
+      .settings-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e0e0e0;
+      }
+      .settings-toggle summary {
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: #666;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .settings-toggle summary::-webkit-details-marker {
+        display: none;
+      }
+      .settings-toggle summary::before {
+        content: '⚙️';
+      }
+      .settings-content {
+        margin-top: 1rem;
+      }
+      .token-input-group {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 0.5rem;
+      }
+      .token-input-group input {
+        flex: 1;
+        padding: 10px 12px;
+        font-size: 0.9rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      }
+      .token-input-group input:focus {
+        outline: none;
+        border-color: #20b200;
+        box-shadow: 0 0 0 2px rgba(32, 178, 0, 0.1);
+      }
+      .token-input-group button {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #f5f5f5;
+      }
+      .token-input-group button:hover {
+        border-color: #20b200;
+        background: #f0fff0;
+      }
+      .token-input-group button.save-btn {
+        background: #20b200;
+        border-color: #20b200;
+        color: white;
+      }
+      .token-input-group button.save-btn:hover {
+        background: #1a9000;
+      }
+      .token-input-group button.clear-btn {
+        color: #666;
+      }
+      .token-input-group button.clear-btn:hover {
+        border-color: #c62828;
+        background: #ffebee;
+        color: #c62828;
+      }
+      .token-hint {
+        font-size: 0.8rem;
+        color: #888;
+        margin: 0;
+      }
+      .token-hint a {
+        color: #20b200;
+      }
+      .token-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        background: #e8f5e9;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #2e7d32;
+        margin-bottom: 0.5rem;
+      }
+      .token-status.no-token {
+        background: #fff8e1;
+        color: #e65100;
+      }
+
       /* Dark mode styles */
       html[data-theme="dark"] body,
       html:not([data-theme]) body.system-dark {
@@ -446,6 +656,104 @@
         background: #3d2d1a;
         border-color: #5a4a2d;
       }
+      /* Dark mode - Recent URLs */
+      html[data-theme="dark"] .recent-header h3,
+      html:not([data-theme]) .system-dark .recent-header h3 {
+        color: #aaa;
+      }
+      html[data-theme="dark"] .clear-history-btn,
+      html:not([data-theme]) .system-dark .clear-history-btn {
+        color: #888;
+      }
+      html[data-theme="dark"] .clear-history-btn:hover,
+      html:not([data-theme]) .system-dark .clear-history-btn:hover {
+        color: #ef9a9a;
+        background: #3d1a1a;
+      }
+      html[data-theme="dark"] .recent-item,
+      html:not([data-theme]) .system-dark .recent-item {
+        background: #252525;
+        border-color: #404040;
+      }
+      html[data-theme="dark"] .recent-item:hover,
+      html:not([data-theme]) .system-dark .recent-item:hover {
+        border-color: #20b200;
+        background: #1a3d1a;
+      }
+      html[data-theme="dark"] .recent-item-title,
+      html:not([data-theme]) .system-dark .recent-item-title {
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .recent-item-meta,
+      html:not([data-theme]) .system-dark .recent-item-meta {
+        color: #888;
+      }
+      html[data-theme="dark"] .recent-item-remove,
+      html:not([data-theme]) .system-dark .recent-item-remove {
+        color: #666;
+      }
+      html[data-theme="dark"] .recent-item-remove:hover,
+      html:not([data-theme]) .system-dark .recent-item-remove:hover {
+        color: #ef9a9a;
+        background: #3d1a1a;
+      }
+      /* Dark mode - Search filter */
+      html[data-theme="dark"] .search-filter input,
+      html:not([data-theme]) .system-dark .search-filter input {
+        background: #1a1a1a;
+        border-color: #404040;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .search-filter input::placeholder,
+      html:not([data-theme]) .system-dark .search-filter input::placeholder {
+        color: #666;
+      }
+      /* Dark mode - Settings/Token */
+      html[data-theme="dark"] .settings-toggle,
+      html:not([data-theme]) .system-dark .settings-toggle {
+        border-color: #404040;
+      }
+      html[data-theme="dark"] .settings-toggle summary,
+      html:not([data-theme]) .system-dark .settings-toggle summary {
+        color: #aaa;
+      }
+      html[data-theme="dark"] .token-input-group input,
+      html:not([data-theme]) .system-dark .token-input-group input {
+        background: #1a1a1a;
+        border-color: #404040;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .token-input-group button,
+      html:not([data-theme]) .system-dark .token-input-group button {
+        background: #333;
+        border-color: #404040;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .token-input-group button:hover,
+      html:not([data-theme]) .system-dark .token-input-group button:hover {
+        border-color: #20b200;
+        background: #1a3d1a;
+      }
+      html[data-theme="dark"] .token-input-group button.clear-btn:hover,
+      html:not([data-theme]) .system-dark .token-input-group button.clear-btn:hover {
+        border-color: #ef9a9a;
+        background: #3d1a1a;
+        color: #ef9a9a;
+      }
+      html[data-theme="dark"] .token-hint,
+      html:not([data-theme]) .system-dark .token-hint {
+        color: #888;
+      }
+      html[data-theme="dark"] .token-status,
+      html:not([data-theme]) .system-dark .token-status {
+        background: #1a3d1a;
+        color: #a5d6a7;
+      }
+      html[data-theme="dark"] .token-status.no-token,
+      html:not([data-theme]) .system-dark .token-status.no-token {
+        background: #3d2d1a;
+        color: #ffcc80;
+      }
     </style>
   </head>
   <body>
@@ -469,7 +777,31 @@
             placeholder="Paste CircleCI job URL or artifact URL..."
           />
           <button id="view-btn">View Trace</button>
+
+          <details class="settings-toggle" id="settings-toggle">
+            <summary>Private Repository Settings</summary>
+            <div class="settings-content">
+              <div id="token-status" class="token-status no-token">
+                <span>No token configured - only public repos supported</span>
+              </div>
+              <div class="token-input-group">
+                <input
+                  type="password"
+                  id="circleci-token"
+                  placeholder="Enter CircleCI API token..."
+                />
+                <button class="save-btn" id="save-token-btn">Save</button>
+                <button class="clear-btn" id="clear-token-btn">Clear</button>
+              </div>
+              <p class="token-hint">
+                Get a token from <a href="https://app.circleci.com/settings/user/tokens" target="_blank">CircleCI Personal API Tokens</a>.
+                Token is stored locally in your browser.
+              </p>
+            </div>
+          </details>
         </div>
+
+        <div id="recent-urls" class="recent-urls hidden"></div>
 
         <h2>What is this?</h2>
         <p>

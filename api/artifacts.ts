@@ -22,13 +22,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  const { project, job } = req.query;
+  const { project, job, token } = req.query;
 
   if (!project || !job) {
     return res.status(400).json({
       error: 'Missing required parameters: project and job'
     });
   }
+
+  // Get optional CircleCI token for private repos
+  const circleciToken = typeof token === 'string' ? token : undefined;
 
   // Validate project format (should be like "gh/mozilla/fxa" or "github/mozilla/fxa")
   const projectSlug = String(project).replace(/^github\//, 'gh/');
@@ -49,11 +52,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const apiUrl = `https://circleci.com/api/v2/project/${projectSlug}/${jobNumber}/artifacts`;
 
-    const response = await fetch(apiUrl, {
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    };
+
+    // Add authorization header if token provided (for private repos)
+    if (circleciToken) {
+      headers['Circle-Token'] = circleciToken;
+    }
+
+    const response = await fetch(apiUrl, { headers });
 
     if (!response.ok) {
       if (response.status === 404) {

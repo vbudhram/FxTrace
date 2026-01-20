@@ -9,11 +9,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const { url } = req.query;
+  const { url, token } = req.query;
 
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ error: 'Missing url parameter' });
   }
+
+  // Get optional CircleCI token for private repos
+  const circleciToken = typeof token === 'string' ? token : undefined;
 
   // Validate URL
   let parsedUrl: URL;
@@ -37,11 +40,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'CircleCI-Trace-Viewer-Proxy/1.0',
-      },
-    });
+    const headers: Record<string, string> = {
+      'User-Agent': 'CircleCI-Trace-Viewer-Proxy/1.0',
+    };
+
+    // Add authorization header if token provided (for private repos)
+    if (circleciToken) {
+      headers['Circle-Token'] = circleciToken;
+    }
+
+    const response = await fetch(url, { headers });
 
     if (!response.ok) {
       return res.status(response.status).json({

@@ -7,6 +7,11 @@ const themeToggle = document.getElementById('theme-toggle')!;
 const themeIcon = themeToggle.querySelector('.theme-icon')!;
 const themeText = themeToggle.querySelector('.theme-text')!;
 const artifactsListEl = document.getElementById('artifacts-list')!;
+const recentUrlsEl = document.getElementById('recent-urls')!;
+const tokenInput = document.getElementById('circleci-token') as HTMLInputElement;
+const saveTokenBtn = document.getElementById('save-token-btn')!;
+const clearTokenBtn = document.getElementById('clear-token-btn')!;
+const tokenStatusEl = document.getElementById('token-status')!;
 
 interface CircleCIArtifact {
   path: string;
@@ -24,6 +29,181 @@ interface ArtifactsResponse {
 interface ParsedJobUrl {
   project: string;
   job: string;
+}
+
+interface RecentUrl {
+  url: string;
+  title: string;
+  type: 'job' | 'artifact';
+  timestamp: number;
+}
+
+const RECENT_URLS_KEY = 'fxtrace_recent_urls';
+const MAX_RECENT_URLS = 8;
+const CIRCLECI_TOKEN_KEY = 'fxtrace_circleci_token';
+
+// Current artifacts for filtering
+let currentArtifacts: CircleCIArtifact[] = [];
+let currentJobUrl: string | undefined;
+
+// Token management
+function getStoredToken(): string | null {
+  return localStorage.getItem(CIRCLECI_TOKEN_KEY);
+}
+
+function saveToken(token: string) {
+  localStorage.setItem(CIRCLECI_TOKEN_KEY, token);
+  updateTokenStatus();
+}
+
+function clearToken() {
+  localStorage.removeItem(CIRCLECI_TOKEN_KEY);
+  tokenInput.value = '';
+  updateTokenStatus();
+}
+
+function updateTokenStatus() {
+  const token = getStoredToken();
+  if (token) {
+    tokenStatusEl.className = 'token-status';
+    tokenStatusEl.innerHTML = '<span>Token configured - private repos supported</span>';
+  } else {
+    tokenStatusEl.className = 'token-status no-token';
+    tokenStatusEl.innerHTML = '<span>No token configured - only public repos supported</span>';
+  }
+}
+
+// Initialize token UI
+function initTokenUI() {
+  updateTokenStatus();
+
+  saveTokenBtn.addEventListener('click', () => {
+    const token = tokenInput.value.trim();
+    if (token) {
+      saveToken(token);
+      tokenInput.value = '';
+    }
+  });
+
+  clearTokenBtn.addEventListener('click', () => {
+    clearToken();
+  });
+
+  tokenInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      saveTokenBtn.click();
+    }
+  });
+}
+
+// Recent URLs management
+function getRecentUrls(): RecentUrl[] {
+  try {
+    const stored = localStorage.getItem(RECENT_URLS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentUrls(urls: RecentUrl[]) {
+  localStorage.setItem(RECENT_URLS_KEY, JSON.stringify(urls));
+}
+
+function addRecentUrl(url: string, title: string, type: 'job' | 'artifact') {
+  const urls = getRecentUrls();
+
+  // Remove existing entry for this URL
+  const filtered = urls.filter(u => u.url !== url);
+
+  // Add new entry at the beginning
+  filtered.unshift({
+    url,
+    title,
+    type,
+    timestamp: Date.now(),
+  });
+
+  // Keep only the most recent entries
+  saveRecentUrls(filtered.slice(0, MAX_RECENT_URLS));
+  renderRecentUrls();
+}
+
+function removeRecentUrl(url: string) {
+  const urls = getRecentUrls().filter(u => u.url !== url);
+  saveRecentUrls(urls);
+  renderRecentUrls();
+}
+
+function clearRecentUrls() {
+  localStorage.removeItem(RECENT_URLS_KEY);
+  renderRecentUrls();
+}
+
+function formatTimeAgo(timestamp: number): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  return new Date(timestamp).toLocaleDateString();
+}
+
+function renderRecentUrls() {
+  const urls = getRecentUrls();
+
+  if (urls.length === 0) {
+    recentUrlsEl.classList.add('hidden');
+    recentUrlsEl.innerHTML = '';
+    return;
+  }
+
+  recentUrlsEl.classList.remove('hidden');
+
+  const itemsHtml = urls.map((item, index) => `
+    <button class="recent-item" data-url="${item.url}" data-index="${index}">
+      <span class="recent-item-icon">${item.type === 'job' ? '📋' : '📦'}</span>
+      <span class="recent-item-info">
+        <span class="recent-item-title">${item.title}</span>
+        <span class="recent-item-meta">${formatTimeAgo(item.timestamp)}</span>
+      </span>
+      <span class="recent-item-remove" data-url="${item.url}" title="Remove">×</span>
+    </button>
+  `).join('');
+
+  recentUrlsEl.innerHTML = `
+    <div class="recent-header">
+      <h3>Recent</h3>
+      <button class="clear-history-btn" id="clear-history-btn">Clear all</button>
+    </div>
+    <div class="recent-items">
+      ${itemsHtml}
+    </div>
+  `;
+
+  // Add click handlers
+  recentUrlsEl.querySelectorAll('.recent-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      // Check if the click was on the remove button
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('recent-item-remove')) {
+        e.stopPropagation();
+        const url = target.getAttribute('data-url');
+        if (url) removeRecentUrl(url);
+        return;
+      }
+
+      const url = item.getAttribute('data-url');
+      if (url) {
+        traceUrlInput.value = url;
+        hideArtifactsList();
+        handleUrl(url);
+      }
+    });
+  });
+
+  document.getElementById('clear-history-btn')?.addEventListener('click', clearRecentUrls);
 }
 
 // Theme management
@@ -107,6 +287,15 @@ function parseCircleCIJobUrl(url: string): ParsedJobUrl | null {
   return null;
 }
 
+function getJobTitleFromUrl(url: string): string {
+  const parsed = parseCircleCIJobUrl(url);
+  if (parsed) {
+    const parts = parsed.project.split('/');
+    return `${parts[1]}/${parts[2]} #${parsed.job}`;
+  }
+  return url.substring(0, 50) + '...';
+}
+
 function isArtifactUrl(url: string): boolean {
   return url.includes('circle-artifacts.com') || url.includes('circleci.com/gh/');
 }
@@ -114,6 +303,8 @@ function isArtifactUrl(url: string): boolean {
 function hideArtifactsList() {
   artifactsListEl.classList.add('hidden');
   artifactsListEl.innerHTML = '';
+  currentArtifacts = [];
+  currentJobUrl = undefined;
 }
 
 interface ParsedTraceInfo {
@@ -203,14 +394,33 @@ function parseTracePath(path: string): ParsedTraceInfo {
   return { testName, testSuite, testType, severity, retry, fileName };
 }
 
-function showArtifactsList(artifacts: CircleCIArtifact[], jobUrl?: string) {
-  artifactsListEl.classList.remove('hidden');
+function filterArtifacts(artifacts: CircleCIArtifact[], query: string): CircleCIArtifact[] {
+  if (!query.trim()) return artifacts;
+
+  const lowerQuery = query.toLowerCase();
+  return artifacts.filter(artifact => {
+    const info = parseTracePath(artifact.path);
+    const searchText = [
+      info.testName,
+      info.testSuite,
+      info.testType,
+      info.severity ? `S${info.severity}` : '',
+      info.retry,
+      artifact.path,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return searchText.includes(lowerQuery);
+  });
+}
+
+function renderArtifactItems(artifacts: CircleCIArtifact[]) {
+  const itemsContainer = artifactsListEl.querySelector('.artifacts-items');
+  if (!itemsContainer) return;
 
   if (artifacts.length === 0) {
-    artifactsListEl.innerHTML = `
+    itemsContainer.innerHTML = `
       <div class="no-artifacts">
-        <p>No trace files found in this job.</p>
-        <p class="hint">Looking for <code>.zip</code> files containing "trace" or "playwright" in the path.</p>
+        <p>No traces match your filter.</p>
       </div>
     `;
     return;
@@ -240,6 +450,38 @@ function showArtifactsList(artifacts: CircleCIArtifact[], jobUrl?: string) {
     `;
   }).join('');
 
+  itemsContainer.innerHTML = listHtml;
+
+  // Add click handlers
+  itemsContainer.querySelectorAll('.artifact-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      const url = item.getAttribute('data-url');
+      if (url) {
+        // Open trace in new tab directly
+        const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(url)}`;
+        const playwrightUrl = `https://trace.playwright.dev/?trace=${encodeURIComponent(proxyUrl)}`;
+        window.open(playwrightUrl, '_blank');
+      }
+    });
+  });
+}
+
+function showArtifactsList(artifacts: CircleCIArtifact[], jobUrl?: string) {
+  currentArtifacts = artifacts;
+  currentJobUrl = jobUrl;
+
+  artifactsListEl.classList.remove('hidden');
+
+  if (artifacts.length === 0) {
+    artifactsListEl.innerHTML = `
+      <div class="no-artifacts">
+        <p>No trace files found in this job.</p>
+        <p class="hint">Looking for <code>.zip</code> files containing "trace" or "playwright" in the path.</p>
+      </div>
+    `;
+    return;
+  }
+
   const shareButtonHtml = jobUrl ? `
     <button class="share-job-btn" id="share-job-btn" title="Copy shareable link">
       <span class="share-icon">🔗</span>
@@ -248,6 +490,9 @@ function showArtifactsList(artifacts: CircleCIArtifact[], jobUrl?: string) {
   ` : '';
 
   artifactsListEl.innerHTML = `
+    <div class="search-filter">
+      <input type="text" id="artifact-search" placeholder="Filter traces by name, suite, or severity..." />
+    </div>
     <div class="artifacts-header">
       <div class="artifacts-header-left">
         <h3>Trace Files Found</h3>
@@ -256,9 +501,33 @@ function showArtifactsList(artifacts: CircleCIArtifact[], jobUrl?: string) {
       ${shareButtonHtml}
     </div>
     <div class="artifacts-items">
-      ${listHtml}
     </div>
   `;
+
+  // Render initial items
+  renderArtifactItems(artifacts);
+
+  // Add search filter handler
+  const searchInput = document.getElementById('artifact-search') as HTMLInputElement;
+  let debounceTimer: number;
+
+  searchInput?.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = window.setTimeout(() => {
+      const filtered = filterArtifacts(currentArtifacts, searchInput.value);
+      renderArtifactItems(filtered);
+
+      // Update count
+      const countEl = artifactsListEl.querySelector('.artifacts-count');
+      if (countEl) {
+        const total = currentArtifacts.length;
+        const shown = filtered.length;
+        countEl.textContent = shown === total
+          ? `${total} trace${total !== 1 ? 's' : ''}`
+          : `${shown} of ${total} traces`;
+      }
+    }, 150);
+  });
 
   // Add share button handler
   if (jobUrl) {
@@ -283,19 +552,6 @@ function showArtifactsList(artifacts: CircleCIArtifact[], jobUrl?: string) {
       }
     });
   }
-
-  // Add click handlers
-  artifactsListEl.querySelectorAll('.artifact-item').forEach((item) => {
-    item.addEventListener('click', () => {
-      const url = item.getAttribute('data-url');
-      if (url) {
-        // Open trace in new tab directly
-        const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(url)}`;
-        const playwrightUrl = `https://trace.playwright.dev/?trace=${encodeURIComponent(proxyUrl)}`;
-        window.open(playwrightUrl, '_blank');
-      }
-    });
-  });
 }
 
 async function fetchJobArtifacts(jobInfo: ParsedJobUrl, originalUrl: string) {
@@ -307,7 +563,8 @@ async function fetchJobArtifacts(jobInfo: ParsedJobUrl, originalUrl: string) {
   );
 
   try {
-    const apiUrl = `${window.location.origin}/api/artifacts?project=${encodeURIComponent(jobInfo.project)}&job=${encodeURIComponent(jobInfo.job)}`;
+    const token = getStoredToken();
+    const apiUrl = `${window.location.origin}/api/artifacts?project=${encodeURIComponent(jobInfo.project)}&job=${encodeURIComponent(jobInfo.job)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
     const response = await fetch(apiUrl);
 
     if (!response.ok) {
@@ -328,6 +585,10 @@ async function fetchJobArtifacts(jobInfo: ParsedJobUrl, originalUrl: string) {
       showLanding();
       return;
     }
+
+    // Add to recent URLs
+    const title = getJobTitleFromUrl(originalUrl);
+    addRecentUrl(originalUrl, title, 'job');
 
     // Show success status and artifact list
     statusEl.classList.add('hidden');
@@ -392,7 +653,8 @@ async function redirectToTrace(traceUrl: string) {
   showStatus(`<span class="spinner"></span>Checking artifact...<br><br>URL: <code>${traceUrl}</code>`, 'loading');
 
   // Construct the proxy URL
-  const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(traceUrl)}`;
+  const token = getStoredToken();
+  const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(traceUrl)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
 
   // Check if artifact exists with a HEAD request
   try {
@@ -412,6 +674,10 @@ async function redirectToTrace(traceUrl: string) {
     return;
   }
 
+  // Add to recent URLs
+  const fileName = traceUrl.split('/').pop() || 'trace.zip';
+  addRecentUrl(traceUrl, fileName, 'artifact');
+
   // Artifact exists, redirect to Playwright
   showStatus(`Redirecting to Playwright Trace Viewer...<br><br>Trace: <code>${traceUrl}</code>`, 'redirecting');
 
@@ -424,6 +690,12 @@ async function redirectToTrace(traceUrl: string) {
 }
 
 function main() {
+  // Initialize token UI
+  initTokenUI();
+
+  // Render recent URLs
+  renderRecentUrls();
+
   // Set example URL
   exampleUrlEl.textContent = `${window.location.origin}?url=<circleci-url>`;
 

@@ -25,6 +25,7 @@ function devProxyPlugin(): Plugin {
         const urlParams = new URL(req.url, 'http://localhost').searchParams;
         const project = urlParams.get('project');
         const job = urlParams.get('job');
+        const token = urlParams.get('token');
 
         if (!project || !job) {
           res.statusCode = 400;
@@ -37,9 +38,11 @@ function devProxyPlugin(): Plugin {
 
         try {
           const apiUrl = `https://circleci.com/api/v2/project/${projectSlug}/${job}/artifacts`;
-          const response = await fetch(apiUrl, {
-            headers: { 'Accept': 'application/json' },
-          });
+          const headers: Record<string, string> = { 'Accept': 'application/json' };
+          if (token) {
+            headers['Circle-Token'] = token;
+          }
+          const response = await fetch(apiUrl, { headers });
 
           res.setHeader('Access-Control-Allow-Origin', '*');
           res.setHeader('Content-Type', 'application/json');
@@ -88,6 +91,7 @@ function devProxyPlugin(): Plugin {
 
         const urlParams = new URL(req.url, 'http://localhost').searchParams;
         const targetUrl = urlParams.get('url');
+        const token = urlParams.get('token');
 
         if (!targetUrl) {
           res.statusCode = 400;
@@ -96,9 +100,11 @@ function devProxyPlugin(): Plugin {
         }
 
         try {
-          const response = await fetch(targetUrl, {
-            headers: { 'User-Agent': 'CircleCI-Trace-Viewer-Proxy/1.0' }
-          });
+          const headers: Record<string, string> = { 'User-Agent': 'CircleCI-Trace-Viewer-Proxy/1.0' };
+          if (token) {
+            headers['Circle-Token'] = token;
+          }
+          const response = await fetch(targetUrl, { headers });
 
           if (!response.ok) {
             res.statusCode = response.status;
