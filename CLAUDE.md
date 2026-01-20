@@ -53,6 +53,12 @@ Two user flows:
 - CSS classes follow BEM-like naming (`.artifact-item`, `.artifact-meta`)
 - Dark mode via `[data-theme="dark"]` CSS attribute selector
 
+## Git Commits
+
+- Do NOT add `Co-Authored-By` lines to commit messages
+- Use concise, descriptive commit messages
+- Follow conventional commit style when appropriate
+
 ## Key Patterns
 
 - **Domain allowlist:** Proxy only accepts CircleCI domains (security)
