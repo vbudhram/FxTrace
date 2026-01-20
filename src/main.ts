@@ -400,8 +400,10 @@ function parseTracePath(path: string): ParsedTraceInfo {
     testName = toTitleCase(lastDir) || 'Trace';
   }
 
-  // Create a group key for combining retries (test identity without retry suffix)
-  const groupKey = `${testSuite || ''}-${testName}-${severity || ''}`;
+  // Create a group key for combining retries (path without retry suffix)
+  // Use the raw path structure for more reliable matching
+  const pathWithoutRetry = lastDir.replace(/[-_]retry\d+$/i, '');
+  const groupKey = pathWithoutRetry.toLowerCase();
 
   return { testName, testSuite, testType, severity, retry, retryNum, fileName, groupKey };
 }
