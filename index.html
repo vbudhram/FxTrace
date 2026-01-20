@@ -332,6 +332,77 @@
         color: #666;
       }
 
+      /* Artifact grouping styles */
+      .artifact-group {
+        display: flex;
+        flex-direction: column;
+      }
+      .artifact-group-header {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+      }
+      .artifact-group-header .artifact-item {
+        flex: 1;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      .artifact-group-header .artifact-item:only-child {
+        border-radius: 8px;
+      }
+      .retry-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        background: #f0f0f0;
+        border: 1px solid #e0e0e0;
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+        cursor: pointer;
+        font-size: 0.75rem;
+        color: #666;
+        transition: all 0.2s;
+      }
+      .retry-toggle:hover {
+        background: #e8e8e8;
+        color: #333;
+      }
+      .retry-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        background: #fff3e0;
+        border: 1px solid #ffcc80;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        color: #e65100;
+        font-weight: 500;
+        margin-left: 4px;
+      }
+      .artifact-retries {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-left: 24px;
+        margin-top: 4px;
+        padding-left: 12px;
+        border-left: 2px solid #e0e0e0;
+      }
+      .artifact-retry-item {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        opacity: 0.8;
+      }
+      .artifact-retry-item .artifact-icon {
+        font-size: 1.2rem;
+      }
+      .artifact-retry-item .artifact-name {
+        font-weight: 500;
+        text-transform: capitalize;
+      }
+
       /* Recent URLs styles */
       .recent-urls {
         margin-top: 1.5rem;
@@ -655,6 +726,28 @@
       html:not([data-theme]) .system-dark .no-artifacts {
         background: #3d2d1a;
         border-color: #5a4a2d;
+      }
+      /* Dark mode - Artifact grouping */
+      html[data-theme="dark"] .retry-toggle,
+      html:not([data-theme]) .system-dark .retry-toggle {
+        background: #333;
+        border-color: #404040;
+        color: #aaa;
+      }
+      html[data-theme="dark"] .retry-toggle:hover,
+      html:not([data-theme]) .system-dark .retry-toggle:hover {
+        background: #404040;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .retry-badge,
+      html:not([data-theme]) .system-dark .retry-badge {
+        background: #3d2d1a;
+        border-color: #5a4a2d;
+        color: #ffcc80;
+      }
+      html[data-theme="dark"] .artifact-retries,
+      html:not([data-theme]) .system-dark .artifact-retries {
+        border-left-color: #404040;
       }
       /* Dark mode - Recent URLs */
       html[data-theme="dark"] .recent-header h3,

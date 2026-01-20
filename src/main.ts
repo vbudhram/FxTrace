@@ -313,7 +313,15 @@ interface ParsedTraceInfo {
   testType: string | null;
   severity: string | null;
   retry: string | null;
+  retryNum: number; // 0 for original, 1+ for retries
   fileName: string;
+  groupKey: string; // Unique key for grouping (test without retry)
+}
+
+interface ArtifactGroup {
+  primary: CircleCIArtifact;
+  retries: CircleCIArtifact[];
+  info: ParsedTraceInfo;
 }
 
 function toTitleCase(str: string): string {
@@ -342,8 +350,9 @@ function parseTracePath(path: string): ParsedTraceInfo {
   const lastDir = parts[parts.length - 1] || '';
 
   // Extract retry info (e.g., "retry1", "retry2")
-  const retryMatch = lastDir.match(/[-_](retry\d+)$/i);
+  const retryMatch = lastDir.match(/[-_](retry(\d+))$/i);
   const retry = retryMatch ? retryMatch[1] : null;
+  const retryNum = retryMatch ? parseInt(retryMatch[2], 10) : 0;
 
   // Remove retry suffix for cleaner parsing
   let testPart = retry ? lastDir.replace(/[-_]retry\d+$/i, '') : lastDir;
@@ -391,7 +400,10 @@ function parseTracePath(path: string): ParsedTraceInfo {
     testName = toTitleCase(lastDir) || 'Trace';
   }
 
-  return { testName, testSuite, testType, severity, retry, fileName };
+  // Create a group key for combining retries (test identity without retry suffix)
+  const groupKey = `${testSuite || ''}-${testName}-${severity || ''}`;
+
+  return { testName, testSuite, testType, severity, retry, retryNum, fileName, groupKey };
 }
 
 function filterArtifacts(artifacts: CircleCIArtifact[], query: string): CircleCIArtifact[] {
@@ -413,6 +425,50 @@ function filterArtifacts(artifacts: CircleCIArtifact[], query: string): CircleCI
   });
 }
 
+function groupArtifacts(artifacts: CircleCIArtifact[]): ArtifactGroup[] {
+  const groups = new Map<string, ArtifactGroup>();
+
+  for (const artifact of artifacts) {
+    const info = parseTracePath(artifact.path);
+    const existing = groups.get(info.groupKey);
+
+    if (!existing) {
+      groups.set(info.groupKey, {
+        primary: artifact,
+        retries: [],
+        info,
+      });
+    } else {
+      // Determine if this is the primary (original) or a retry
+      if (info.retryNum === 0) {
+        // This is the original, move current primary to retries if it's a retry
+        if (existing.info.retryNum > 0) {
+          existing.retries.push(existing.primary);
+          existing.primary = artifact;
+          existing.info = info;
+        } else {
+          // Both are originals (shouldn't happen), keep first
+          existing.retries.push(artifact);
+        }
+      } else {
+        // This is a retry
+        existing.retries.push(artifact);
+      }
+    }
+  }
+
+  // Sort retries within each group by retry number
+  for (const group of groups.values()) {
+    group.retries.sort((a, b) => {
+      const infoA = parseTracePath(a.path);
+      const infoB = parseTracePath(b.path);
+      return infoA.retryNum - infoB.retryNum;
+    });
+  }
+
+  return Array.from(groups.values());
+}
+
 function renderArtifactItems(artifacts: CircleCIArtifact[]) {
   const itemsContainer = artifactsListEl.querySelector('.artifacts-items');
   if (!itemsContainer) return;
@@ -426,41 +482,88 @@ function renderArtifactItems(artifacts: CircleCIArtifact[]) {
     return;
   }
 
-  const listHtml = artifacts.map((artifact, index) => {
-    const info = parseTracePath(artifact.path);
+  const groups = groupArtifacts(artifacts);
 
-    // Build metadata tags
+  const listHtml = groups.map((group, groupIndex) => {
+    const { primary, retries, info } = group;
+    const hasRetries = retries.length > 0;
+
+    // Build metadata tags (without retry for primary)
     const tags: string[] = [];
     if (info.testSuite) tags.push(info.testSuite);
     if (info.testType) tags.push(info.testType);
     if (info.severity) tags.push(`S${info.severity}`);
-    if (info.retry) tags.push(info.retry);
 
     const metaHtml = tags.map(tag => `<span class="artifact-tag">${tag}</span>`).join('');
 
+    // Retry indicator
+    const retryBadge = hasRetries
+      ? `<span class="retry-badge" title="${retries.length} retry attempt${retries.length > 1 ? 's' : ''}">${retries.length} retry</span>`
+      : '';
+
+    // Build retries HTML
+    const retriesHtml = hasRetries ? `
+      <div class="artifact-retries hidden" data-group="${groupIndex}">
+        ${retries.map((retry, retryIndex) => {
+          const retryInfo = parseTracePath(retry.path);
+          return `
+            <button class="artifact-item artifact-retry-item" data-url="${retry.url}" data-retry="${retryIndex}">
+              <span class="artifact-icon">🔄</span>
+              <span class="artifact-info">
+                <span class="artifact-name">${retryInfo.retry || `Retry ${retryIndex + 1}`}</span>
+              </span>
+              <span class="artifact-arrow">→</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    ` : '';
+
     return `
-      <button class="artifact-item" data-url="${artifact.url}" data-index="${index}">
-        <span class="artifact-icon">📦</span>
-        <span class="artifact-info">
-          <span class="artifact-name">${info.testName}</span>
-          <span class="artifact-meta">${metaHtml}</span>
-        </span>
-        <span class="artifact-arrow">→</span>
-      </button>
+      <div class="artifact-group" data-group="${groupIndex}">
+        <div class="artifact-group-header">
+          <button class="artifact-item artifact-primary" data-url="${primary.url}" data-group="${groupIndex}">
+            <span class="artifact-icon">${hasRetries ? '⚠️' : '📦'}</span>
+            <span class="artifact-info">
+              <span class="artifact-name">${info.testName}</span>
+              <span class="artifact-meta">${metaHtml}${retryBadge}</span>
+            </span>
+            <span class="artifact-arrow">→</span>
+          </button>
+          ${hasRetries ? `<button class="retry-toggle" data-group="${groupIndex}" title="Show retries">▼</button>` : ''}
+        </div>
+        ${retriesHtml}
+      </div>
     `;
   }).join('');
 
   itemsContainer.innerHTML = listHtml;
 
-  // Add click handlers
+  // Add click handlers for primary items
   itemsContainer.querySelectorAll('.artifact-item').forEach((item) => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', (e) => {
+      // Don't trigger if clicking on retry toggle
+      if ((e.target as HTMLElement).classList.contains('retry-toggle')) return;
+
       const url = item.getAttribute('data-url');
       if (url) {
-        // Open trace in new tab directly
         const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(url)}`;
         const playwrightUrl = `https://trace.playwright.dev/?trace=${encodeURIComponent(proxyUrl)}`;
         window.open(playwrightUrl, '_blank');
+      }
+    });
+  });
+
+  // Add click handlers for retry toggles
+  itemsContainer.querySelectorAll('.retry-toggle').forEach((toggle) => {
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const groupIndex = toggle.getAttribute('data-group');
+      const retriesContainer = itemsContainer.querySelector(`.artifact-retries[data-group="${groupIndex}"]`);
+      if (retriesContainer) {
+        const isHidden = retriesContainer.classList.toggle('hidden');
+        (toggle as HTMLButtonElement).textContent = isHidden ? '▼' : '▲';
+        (toggle as HTMLButtonElement).title = isHidden ? 'Show retries' : 'Hide retries';
       }
     });
   });
