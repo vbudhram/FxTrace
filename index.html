@@ -947,6 +947,31 @@
         border-color: #20b200;
         background: #1a3d1a;
       }
+
+      /* Shortcuts hint in footer */
+      .shortcuts-hint {
+        font-size: 0.8rem;
+        color: #999;
+        margin-top: 0.5rem;
+      }
+      .shortcuts-hint kbd {
+        background: #f4f4f4;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 2px 6px;
+        font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+        font-size: 0.75rem;
+      }
+      html[data-theme="dark"] .shortcuts-hint,
+      html:not([data-theme]) .system-dark .shortcuts-hint {
+        color: #666;
+      }
+      html[data-theme="dark"] .shortcuts-hint kbd,
+      html:not([data-theme]) .system-dark .shortcuts-hint kbd {
+        background: #333;
+        border-color: #404040;
+        color: #aaa;
+      }
     </style>
   </head>
   <body>
@@ -1026,6 +1051,7 @@
             Built for <a href="https://github.com/mozilla/fxa">Firefox Accounts</a> |
             <a href="https://github.com/vbudhram/FxTrace">GitHub</a>
           </p>
+          <p class="shortcuts-hint">Press <kbd>?</kbd> for keyboard shortcuts</p>
         </div>
       </div>
     </div>
