@@ -530,6 +530,7 @@ function renderArtifactItems(artifacts: CircleCIArtifact[]) {
               <span class="artifact-name">${info.testName}</span>
               <span class="artifact-meta">${metaHtml}${retryBadge}</span>
             </span>
+            <span class="artifact-copy" data-url="${primary.url}" title="Copy link">📋</span>
             <span class="artifact-arrow">→</span>
           </button>
           ${hasRetries ? `<button class="retry-toggle" data-group="${groupIndex}" title="Show retries">▼</button>` : ''}

@@ -316,6 +316,25 @@
         font-size: 1.2rem;
         flex-shrink: 0;
       }
+      .artifact-copy {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        font-size: 1rem;
+        flex-shrink: 0;
+        transition: all 0.2s;
+        opacity: 0.6;
+      }
+      .artifact-copy:hover {
+        background: rgba(32, 178, 0, 0.1);
+        opacity: 1;
+      }
+      .artifact-copy.copied {
+        opacity: 1;
+      }
       .no-artifacts {
         padding: 2rem;
         text-align: center;
@@ -721,6 +740,10 @@
       html:not([data-theme]) .system-dark .artifact-tag {
         background: #3a3a3a;
         color: #aaa;
+      }
+      html[data-theme="dark"] .artifact-copy:hover,
+      html:not([data-theme]) .system-dark .artifact-copy:hover {
+        background: rgba(32, 178, 0, 0.2);
       }
       html[data-theme="dark"] .no-artifacts,
       html:not([data-theme]) .system-dark .no-artifacts {
