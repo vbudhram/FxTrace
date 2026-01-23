@@ -12,6 +12,8 @@ const tokenInput = document.getElementById('circleci-token') as HTMLInputElement
 const saveTokenBtn = document.getElementById('save-token-btn')!;
 const clearTokenBtn = document.getElementById('clear-token-btn')!;
 const tokenStatusEl = document.getElementById('token-status')!;
+const shortcutsOverlayEl = document.getElementById('shortcuts-overlay')!;
+const shortcutsCloseBtn = document.getElementById('shortcuts-close')!;
 
 interface CircleCIArtifact {
   path: string;
@@ -801,19 +803,47 @@ function isInputElement(element: Element | null): boolean {
   return tagName === 'input' || tagName === 'textarea' || (element as HTMLElement).isContentEditable;
 }
 
+// Shortcuts overlay management
+function showShortcutsOverlay(): void {
+  shortcutsOverlayEl.classList.remove('hidden');
+}
+
+function hideShortcutsOverlay(): void {
+  shortcutsOverlayEl.classList.add('hidden');
+}
+
+function isShortcutsOverlayVisible(): boolean {
+  return !shortcutsOverlayEl.classList.contains('hidden');
+}
+
 // Centralized keyboard shortcut handler
 function handleKeyboardShortcut(e: KeyboardEvent): void {
   // Ignore shortcuts when typing in an input field (except Escape)
   const inInput = isInputElement(document.activeElement);
 
-  // Escape key - clear and reset (works even in input)
+  // Escape key - close overlay or clear and reset (works even in input)
   if (e.key === 'Escape') {
     e.preventDefault();
+    if (isShortcutsOverlayVisible()) {
+      hideShortcutsOverlay();
+      return;
+    }
     traceUrlInput.value = '';
     traceUrlInput.blur();
     hideArtifactsList();
     statusEl.classList.add('hidden');
     landingEl.classList.remove('hidden');
+    return;
+  }
+
+  // ? key or Cmd/Ctrl+/ - show shortcuts overlay
+  if (e.key === '?' || ((e.metaKey || e.ctrlKey) && e.key === '/')) {
+    e.preventDefault();
+    if (isShortcutsOverlayVisible()) {
+      hideShortcutsOverlay();
+    } else {
+      showShortcutsOverlay();
+    }
     return;
   }
 
@@ -885,6 +915,15 @@ function main() {
 
   // Keyboard shortcuts handler
   document.addEventListener('keydown', handleKeyboardShortcut);
+
+  // Shortcuts overlay close handlers
+  shortcutsCloseBtn.addEventListener('click', hideShortcutsOverlay);
+  shortcutsOverlayEl.addEventListener('click', (e) => {
+    // Close when clicking the overlay background (not the modal)
+    if (e.target === shortcutsOverlayEl) {
+      hideShortcutsOverlay();
+    }
+  });
 
   // Handle paste anywhere on page - auto-submit if it's a CircleCI URL
   document.addEventListener('paste', (e) => {
