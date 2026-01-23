@@ -3,41 +3,12 @@
 This file contains the product backlog for FxTrace, managed by the Product Owner agent.
 Run `/product-owner` to scan for improvements and generate new PRD entries.
 
-**Last Updated:** 2026-01-20
-**Total Items:** 10 (3 completed, 7 remaining)
+**Last Updated:** 2026-01-23
+**Total Items:** 14 (4 completed, 10 remaining)
 
 ---
 
 ## Backlog Items
-
-## Keyboard Shortcuts
-
-**Priority:** P2 (Medium)
-**Effort:** S (Small, <1 day)
-**Status:** Proposed
-
-### Problem Statement
-Power users who frequently use FxTrace want faster navigation. Currently all interactions require mouse clicks.
-
-### Proposed Solution
-Add keyboard shortcuts for common actions with a help overlay showing available shortcuts.
-
-### Requirements
-- [ ] `Cmd/Ctrl + V` in input focuses and pastes (already works via browser)
-- [ ] `Enter` submits form (already implemented)
-- [ ] `Escape` clears input and resets view
-- [ ] `1-9` keys select artifact by position when list is shown
-- [ ] `?` or `Cmd/Ctrl + /` shows keyboard shortcuts help
-- [ ] `/` focuses the URL input
-
-### Technical Notes
-- Use `keydown` event listeners on document
-- Ensure shortcuts don't interfere with browser defaults
-- Shortcuts should be disabled when typing in input
-
-### Success Metrics
-- Power users can navigate without mouse
-- Reduced time to select and view traces
 
 ---
 
@@ -227,6 +198,131 @@ Move CSS to a separate `styles.css` file that Vite bundles and caches separately
 
 ---
 
+## Direct Link Copy (Without Redirect)
+
+**Priority:** P2 (Medium)
+**Effort:** S (Small, <1 day)
+**Status:** Proposed
+
+### Problem Statement
+Sometimes users want to copy a Playwright trace viewer URL to share with colleagues without actually opening the viewer. Currently they must visit the page, let it redirect, then copy from the browser.
+
+### Proposed Solution
+Add a "Copy Link" button next to each artifact that copies the full trace.playwright.dev URL directly.
+
+### Requirements
+- [ ] Add copy icon button next to each artifact item
+- [ ] Copy full `trace.playwright.dev/?trace=...` URL to clipboard
+- [ ] Visual feedback on copy (checkmark, "Copied!" text)
+- [ ] Works alongside existing "open in new tab" behavior
+- [ ] Keyboard shortcut: hold Shift + number to copy instead of open
+
+### Technical Notes
+- Reuse existing clipboard logic from share button
+- URL construction already exists in click handler
+- Consider tooltip showing the copied URL
+
+### Success Metrics
+- Users can share trace links without opening them
+- Reduced unnecessary page loads
+
+---
+
+## Accessibility Improvements
+
+**Priority:** P2 (Medium)
+**Effort:** M (Medium, 1-3 days)
+**Status:** Proposed
+
+### Problem Statement
+The current UI uses emoji icons which are not accessible to screen readers. There are no ARIA labels, and keyboard navigation beyond shortcuts is limited.
+
+### Proposed Solution
+Add proper accessibility support following WCAG 2.1 guidelines.
+
+### Requirements
+- [ ] Replace or supplement emoji icons with screen-reader accessible alternatives
+- [ ] Add `aria-label` attributes to all interactive elements
+- [ ] Add `role` attributes where semantic HTML isn't used
+- [ ] Ensure focus states are clearly visible
+- [ ] Add skip-to-content link
+- [ ] Test with VoiceOver/NVDA
+- [ ] Ensure color contrast meets AA standards
+
+### Technical Notes
+- Can use `aria-hidden="true"` on decorative emojis and add `sr-only` text
+- Focus trap in shortcuts modal
+- Announce dynamic content changes with `aria-live`
+
+### Success Metrics
+- Lighthouse accessibility score > 90
+- Usable with screen reader
+- All interactive elements keyboard accessible
+
+---
+
+## Favorites / Pinned Traces
+
+**Priority:** P3 (Low)
+**Effort:** S (Small, <1 day)
+**Status:** Proposed
+
+### Problem Statement
+Power users often revisit the same traces repeatedly (e.g., a flaky test they're debugging). Recent URLs help, but they get pushed out by newer activity.
+
+### Proposed Solution
+Add ability to "star" or pin specific traces/jobs for quick access.
+
+### Requirements
+- [ ] Add star/pin button on artifact items and recent URLs
+- [ ] Separate "Favorites" section that persists above Recent
+- [ ] Favorites stored in localStorage
+- [ ] Limit to 10-15 favorites
+- [ ] Ability to unstar/remove favorites
+- [ ] Favorites survive Recent URL clearing
+
+### Technical Notes
+- Separate localStorage key from recent URLs
+- Could add optional labels/notes to favorites
+- Consider drag-to-reorder
+
+### Success Metrics
+- Frequently accessed traces are one-click away
+- User can maintain a curated list of important traces
+
+---
+
+## Mobile-Optimized View
+
+**Priority:** P3 (Low)
+**Effort:** M (Medium, 1-3 days)
+**Status:** Proposed
+
+### Problem Statement
+Current UI is designed for desktop. On mobile devices, the layout may be cramped and touch targets too small.
+
+### Proposed Solution
+Add responsive CSS and touch-friendly interactions for mobile users.
+
+### Requirements
+- [ ] Responsive layout that works on phone screens (< 480px)
+- [ ] Touch-friendly button sizes (min 44px tap targets)
+- [ ] Collapsible sections on mobile
+- [ ] Test on iOS Safari and Android Chrome
+- [ ] Consider swipe gestures for artifact list
+
+### Technical Notes
+- CSS media queries for breakpoints
+- Existing Vite setup handles responsive CSS
+- Test with Chrome DevTools device emulation
+
+### Success Metrics
+- Usable on phone without zooming
+- All functionality accessible on mobile
+- No horizontal scrolling required
+
+---
+
 ## Completed Items
 
 ### Recent URLs History (Completed 2026-01-20)
@@ -267,3 +363,18 @@ Implemented CircleCI token support:
 - [x] Clear instructions with link to CircleCI token page
 - [x] "Clear" button to remove stored credentials
 - [x] Status indicator showing token state
+
+---
+
+### Keyboard Shortcuts (Completed 2026-01-23)
+
+**Priority:** P2 (Medium) | **Effort:** S (Small)
+
+Implemented keyboard navigation for power users:
+- [x] `/` focuses the URL input field
+- [x] `Escape` clears input and resets view
+- [x] `1-9` keys select artifact by position when list is shown
+- [x] `?` or `Cmd/Ctrl + /` shows keyboard shortcuts help overlay
+- [x] Visual hint in footer: "Press ? for keyboard shortcuts"
+- [x] Shortcuts disabled when typing in input fields
+- [x] Full dark mode support for overlay
