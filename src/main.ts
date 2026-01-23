@@ -794,6 +794,23 @@ async function redirectToTrace(traceUrl: string) {
   }, 500);
 }
 
+// Check if an element is an input field where shortcuts should be ignored
+function isInputElement(element: Element | null): boolean {
+  if (!element) return false;
+  const tagName = element.tagName.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || (element as HTMLElement).isContentEditable;
+}
+
+// Centralized keyboard shortcut handler
+function handleKeyboardShortcut(e: KeyboardEvent): void {
+  // Ignore shortcuts when typing in an input field
+  if (isInputElement(document.activeElement)) {
+    return;
+  }
+
+  // Shortcuts will be added here in subsequent stories
+}
+
 function main() {
   // Initialize token UI
   initTokenUI();
@@ -831,6 +848,9 @@ function main() {
       viewBtn.click();
     }
   });
+
+  // Keyboard shortcuts handler
+  document.addEventListener('keydown', handleKeyboardShortcut);
 
   // Handle paste anywhere on page - auto-submit if it's a CircleCI URL
   document.addEventListener('paste', (e) => {
