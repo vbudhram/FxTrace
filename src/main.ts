@@ -821,6 +821,13 @@ function handleKeyboardShortcut(e: KeyboardEvent): void {
   if (inInput) {
     return;
   }
+
+  // Slash key - focus URL input
+  if (e.key === '/') {
+    e.preventDefault();
+    traceUrlInput.focus();
+    return;
+  }
 }
 
 function main() {
