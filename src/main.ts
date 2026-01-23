@@ -907,7 +907,7 @@ function handleKeyboardShortcut(e: KeyboardEvent): void {
     return;
   }
 
-  // Number keys 1-9 - select artifact by position
+  // Number keys 1-9 - select artifact by position (Shift+number to copy link)
   if (e.key >= '1' && e.key <= '9') {
     // Only work when artifact list is visible
     if (artifactsListEl.classList.contains('hidden')) {
@@ -917,7 +917,32 @@ function handleKeyboardShortcut(e: KeyboardEvent): void {
     const artifactItems = artifactsListEl.querySelectorAll('.artifact-primary');
     if (index < artifactItems.length) {
       e.preventDefault();
-      (artifactItems[index] as HTMLButtonElement).click();
+      const item = artifactItems[index] as HTMLButtonElement;
+
+      if (e.shiftKey) {
+        // Shift+number: copy link to clipboard
+        const url = item.getAttribute('data-url');
+        if (url) {
+          const playwrightUrl = buildPlaywrightUrl(url);
+          copyToClipboard(playwrightUrl).then((success) => {
+            if (success) {
+              // Show feedback on the copy button
+              const copyBtn = item.querySelector('.artifact-copy') as HTMLElement;
+              if (copyBtn) {
+                copyBtn.textContent = '✓';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                  copyBtn.textContent = '📋';
+                  copyBtn.classList.remove('copied');
+                }, 2000);
+              }
+            }
+          });
+        }
+      } else {
+        // Regular number: open trace
+        item.click();
+      }
     }
     return;
   }
