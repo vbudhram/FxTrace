@@ -828,6 +828,21 @@ function handleKeyboardShortcut(e: KeyboardEvent): void {
     traceUrlInput.focus();
     return;
   }
+
+  // Number keys 1-9 - select artifact by position
+  if (e.key >= '1' && e.key <= '9') {
+    // Only work when artifact list is visible
+    if (artifactsListEl.classList.contains('hidden')) {
+      return;
+    }
+    const index = parseInt(e.key, 10) - 1;
+    const artifactItems = artifactsListEl.querySelectorAll('.artifact-primary');
+    if (index < artifactItems.length) {
+      e.preventDefault();
+      (artifactItems[index] as HTMLButtonElement).click();
+    }
+    return;
+  }
 }
 
 function main() {
