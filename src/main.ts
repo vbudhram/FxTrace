@@ -46,6 +46,31 @@ const CIRCLECI_TOKEN_KEY = 'fxtrace_circleci_token';
 let currentArtifacts: CircleCIArtifact[] = [];
 let currentJobUrl: string | undefined;
 
+// Helper to build Playwright trace viewer URL
+function buildPlaywrightUrl(artifactUrl: string): string {
+  const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(artifactUrl)}`;
+  return `https://trace.playwright.dev/?trace=${encodeURIComponent(proxyUrl)}`;
+}
+
+// Copy text to clipboard with fallback for older browsers
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    const success = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return success;
+  }
+}
+
 // Token management
 function getStoredToken(): string | null {
   return localStorage.getItem(CIRCLECI_TOKEN_KEY);
@@ -545,13 +570,26 @@ function renderArtifactItems(artifacts: CircleCIArtifact[]) {
   // Add click handlers for primary items
   itemsContainer.querySelectorAll('.artifact-item').forEach((item) => {
     item.addEventListener('click', (e) => {
-      // Don't trigger if clicking on retry toggle
-      if ((e.target as HTMLElement).classList.contains('retry-toggle')) return;
+      const target = e.target as HTMLElement;
 
+      // Don't trigger if clicking on retry toggle
+      if (target.classList.contains('retry-toggle')) return;
+
+      // Handle copy button click
+      if (target.classList.contains('artifact-copy')) {
+        e.stopPropagation();
+        const url = target.getAttribute('data-url');
+        if (url) {
+          const playwrightUrl = buildPlaywrightUrl(url);
+          copyToClipboard(playwrightUrl);
+        }
+        return;
+      }
+
+      // Default: open trace in new tab
       const url = item.getAttribute('data-url');
       if (url) {
-        const proxyUrl = `${window.location.origin}/api/proxy?url=${encodeURIComponent(url)}`;
-        const playwrightUrl = `https://trace.playwright.dev/?trace=${encodeURIComponent(proxyUrl)}`;
+        const playwrightUrl = buildPlaywrightUrl(url);
         window.open(playwrightUrl, '_blank');
       }
     });
