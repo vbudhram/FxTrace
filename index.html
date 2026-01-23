@@ -877,6 +877,131 @@
         background: #3d2d1a;
         color: #ffcc80;
       }
+
+      /* Keyboard shortcuts overlay */
+      .shortcuts-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .shortcuts-modal {
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+      .shortcuts-modal h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0 0 16px 0;
+        color: #333;
+      }
+      .shortcuts-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .shortcut-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .shortcut-key {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .shortcut-key kbd {
+        background: #f4f4f4;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+        font-size: 0.85rem;
+        color: #333;
+      }
+      .shortcut-desc {
+        color: #666;
+        font-size: 0.9rem;
+      }
+      .shortcuts-close {
+        display: block;
+        margin-top: 16px;
+        padding: 8px 16px;
+        background: #f4f4f4;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        width: 100%;
+        text-align: center;
+        transition: all 0.2s;
+      }
+      .shortcuts-close:hover {
+        border-color: #20b200;
+        background: #f0fff0;
+      }
+      /* Dark mode - Shortcuts overlay */
+      html[data-theme="dark"] .shortcuts-modal,
+      html:not([data-theme]) .system-dark .shortcuts-modal {
+        background: #252525;
+      }
+      html[data-theme="dark"] .shortcuts-modal h3,
+      html:not([data-theme]) .system-dark .shortcuts-modal h3 {
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .shortcut-key kbd,
+      html:not([data-theme]) .system-dark .shortcut-key kbd {
+        background: #333;
+        border-color: #404040;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .shortcut-desc,
+      html:not([data-theme]) .system-dark .shortcut-desc {
+        color: #aaa;
+      }
+      html[data-theme="dark"] .shortcuts-close,
+      html:not([data-theme]) .system-dark .shortcuts-close {
+        background: #333;
+        border-color: #404040;
+        color: #e0e0e0;
+      }
+      html[data-theme="dark"] .shortcuts-close:hover,
+      html:not([data-theme]) .system-dark .shortcuts-close:hover {
+        border-color: #20b200;
+        background: #1a3d1a;
+      }
+
+      /* Shortcuts hint in footer */
+      .shortcuts-hint {
+        font-size: 0.8rem;
+        color: #999;
+        margin-top: 0.5rem;
+      }
+      .shortcuts-hint kbd {
+        background: #f4f4f4;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 2px 6px;
+        font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+        font-size: 0.75rem;
+      }
+      html[data-theme="dark"] .shortcuts-hint,
+      html:not([data-theme]) .system-dark .shortcuts-hint {
+        color: #666;
+      }
+      html[data-theme="dark"] .shortcuts-hint kbd,
+      html:not([data-theme]) .system-dark .shortcuts-hint kbd {
+        background: #333;
+        border-color: #404040;
+        color: #aaa;
+      }
     </style>
   </head>
   <body>
@@ -956,7 +1081,33 @@
             Built for <a href="https://github.com/mozilla/fxa">Firefox Accounts</a> |
             <a href="https://github.com/vbudhram/FxTrace">GitHub</a>
           </p>
+          <p class="shortcuts-hint">Press <kbd>?</kbd> for keyboard shortcuts</p>
         </div>
+      </div>
+    </div>
+    <!-- Keyboard shortcuts overlay -->
+    <div id="shortcuts-overlay" class="shortcuts-overlay hidden">
+      <div class="shortcuts-modal">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcuts-list">
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>/</kbd></span>
+            <span class="shortcut-desc">Focus URL input</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Esc</kbd></span>
+            <span class="shortcut-desc">Clear and reset</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>1</kbd> - <kbd>9</kbd></span>
+            <span class="shortcut-desc">Select artifact by number</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>?</kbd></span>
+            <span class="shortcut-desc">Show this help</span>
+          </div>
+        </div>
+        <button class="shortcuts-close" id="shortcuts-close">Close</button>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

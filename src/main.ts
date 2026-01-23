@@ -12,6 +12,8 @@ const tokenInput = document.getElementById('circleci-token') as HTMLInputElement
 const saveTokenBtn = document.getElementById('save-token-btn')!;
 const clearTokenBtn = document.getElementById('clear-token-btn')!;
 const tokenStatusEl = document.getElementById('token-status')!;
+const shortcutsOverlayEl = document.getElementById('shortcuts-overlay')!;
+const shortcutsCloseBtn = document.getElementById('shortcuts-close')!;
 
 interface CircleCIArtifact {
   path: string;
@@ -842,6 +844,85 @@ async function redirectToTrace(traceUrl: string) {
   }, 500);
 }
 
+// Check if an element is an input field where shortcuts should be ignored
+function isInputElement(element: Element | null): boolean {
+  if (!element) return false;
+  const tagName = element.tagName.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || (element as HTMLElement).isContentEditable;
+}
+
+// Shortcuts overlay management
+function showShortcutsOverlay(): void {
+  shortcutsOverlayEl.classList.remove('hidden');
+}
+
+function hideShortcutsOverlay(): void {
+  shortcutsOverlayEl.classList.add('hidden');
+}
+
+function isShortcutsOverlayVisible(): boolean {
+  return !shortcutsOverlayEl.classList.contains('hidden');
+}
+
+// Centralized keyboard shortcut handler
+function handleKeyboardShortcut(e: KeyboardEvent): void {
+  // Ignore shortcuts when typing in an input field (except Escape)
+  const inInput = isInputElement(document.activeElement);
+
+  // Escape key - close overlay or clear and reset (works even in input)
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if (isShortcutsOverlayVisible()) {
+      hideShortcutsOverlay();
+      return;
+    }
+    traceUrlInput.value = '';
+    traceUrlInput.blur();
+    hideArtifactsList();
+    statusEl.classList.add('hidden');
+    landingEl.classList.remove('hidden');
+    return;
+  }
+
+  // ? key or Cmd/Ctrl+/ - show shortcuts overlay
+  if (e.key === '?' || ((e.metaKey || e.ctrlKey) && e.key === '/')) {
+    e.preventDefault();
+    if (isShortcutsOverlayVisible()) {
+      hideShortcutsOverlay();
+    } else {
+      showShortcutsOverlay();
+    }
+    return;
+  }
+
+  // Other shortcuts require not being in an input
+  if (inInput) {
+    return;
+  }
+
+  // Slash key - focus URL input
+  if (e.key === '/') {
+    e.preventDefault();
+    traceUrlInput.focus();
+    return;
+  }
+
+  // Number keys 1-9 - select artifact by position
+  if (e.key >= '1' && e.key <= '9') {
+    // Only work when artifact list is visible
+    if (artifactsListEl.classList.contains('hidden')) {
+      return;
+    }
+    const index = parseInt(e.key, 10) - 1;
+    const artifactItems = artifactsListEl.querySelectorAll('.artifact-primary');
+    if (index < artifactItems.length) {
+      e.preventDefault();
+      (artifactItems[index] as HTMLButtonElement).click();
+    }
+    return;
+  }
+}
+
 function main() {
   // Initialize token UI
   initTokenUI();
@@ -877,6 +958,18 @@ function main() {
   traceUrlInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       viewBtn.click();
+    }
+  });
+
+  // Keyboard shortcuts handler
+  document.addEventListener('keydown', handleKeyboardShortcut);
+
+  // Shortcuts overlay close handlers
+  shortcutsCloseBtn.addEventListener('click', hideShortcutsOverlay);
+  shortcutsOverlayEl.addEventListener('click', (e) => {
+    // Close when clicking the overlay background (not the modal)
+    if (e.target === shortcutsOverlayEl) {
+      hideShortcutsOverlay();
     }
   });
 
