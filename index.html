@@ -334,6 +334,8 @@
       }
       .artifact-copy.copied {
         opacity: 1;
+        color: #20b200;
+        background: rgba(32, 178, 0, 0.1);
       }
       .no-artifacts {
         padding: 2rem;
@@ -743,6 +745,11 @@
       }
       html[data-theme="dark"] .artifact-copy:hover,
       html:not([data-theme]) .system-dark .artifact-copy:hover {
+        background: rgba(32, 178, 0, 0.2);
+      }
+      html[data-theme="dark"] .artifact-copy.copied,
+      html:not([data-theme]) .system-dark .artifact-copy.copied {
+        color: #20b200;
         background: rgba(32, 178, 0, 0.2);
       }
       html[data-theme="dark"] .no-artifacts,

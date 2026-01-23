@@ -581,7 +581,16 @@ function renderArtifactItems(artifacts: CircleCIArtifact[]) {
         const url = target.getAttribute('data-url');
         if (url) {
           const playwrightUrl = buildPlaywrightUrl(url);
-          copyToClipboard(playwrightUrl);
+          copyToClipboard(playwrightUrl).then((success) => {
+            if (success) {
+              target.textContent = '✓';
+              target.classList.add('copied');
+              setTimeout(() => {
+                target.textContent = '📋';
+                target.classList.remove('copied');
+              }, 2000);
+            }
+          });
         }
         return;
       }
