@@ -803,12 +803,24 @@ function isInputElement(element: Element | null): boolean {
 
 // Centralized keyboard shortcut handler
 function handleKeyboardShortcut(e: KeyboardEvent): void {
-  // Ignore shortcuts when typing in an input field
-  if (isInputElement(document.activeElement)) {
+  // Ignore shortcuts when typing in an input field (except Escape)
+  const inInput = isInputElement(document.activeElement);
+
+  // Escape key - clear and reset (works even in input)
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    traceUrlInput.value = '';
+    traceUrlInput.blur();
+    hideArtifactsList();
+    statusEl.classList.add('hidden');
+    landingEl.classList.remove('hidden');
     return;
   }
 
-  // Shortcuts will be added here in subsequent stories
+  // Other shortcuts require not being in an input
+  if (inInput) {
+    return;
+  }
 }
 
 function main() {
